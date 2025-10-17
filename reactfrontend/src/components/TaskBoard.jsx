@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import TaskService from "../api/TaskService";
+import axios from "axios";
 import "./TaskCard.css";
+
+const baseUrl = `${import.meta.env.VITE_API_URL}/api/tasks`;
 
 export default function TaskBoard() {
   const [tasks, setTasks] = useState([]);
@@ -11,7 +13,7 @@ export default function TaskBoard() {
 
   const loadTasks = async () => {
     try {
-      const res = await TaskService.getAllTasks();
+      const res = await axios.get(`${baseUrl}/all`);
       setTasks(res.data || []);
     } catch (err) {
       console.error("Error loading tasks:", err);
@@ -21,7 +23,7 @@ export default function TaskBoard() {
   const updateStatus = async (task, newStatus) => {
     try {
       const updatedTask = { ...task, status: newStatus };
-      await TaskService.updateTask(task.id, updatedTask); 
+      await axios.put(`${baseUrl}/update/${task.id}`, updatedTask);
       loadTasks();
     } catch (err) {
       console.error("Failed to update task status:", err);

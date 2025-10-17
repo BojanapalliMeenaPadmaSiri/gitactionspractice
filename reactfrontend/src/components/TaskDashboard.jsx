@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import TaskService from "../api/TaskService";
+import axios from "axios";
 import "./Form.css";
 import "./TaskTable.css";
 
+const baseUrl = `${import.meta.env.VITE_API_URL}/api/tasks`;
+
 export default function TaskDashboard() {
   const [tasks, setTasks] = useState([]);
-  const [filteredTasks, setFilteredTasks] = useState([]); // filtered list
+  const [filteredTasks, setFilteredTasks] = useState([]);
   const [search, setSearch] = useState("");
   const [editingTask, setEditingTask] = useState(null);
   const [error, setError] = useState("");
@@ -24,10 +26,10 @@ export default function TaskDashboard() {
 
   const loadTasks = async () => {
     try {
-      const res = await TaskService.getAllTasks();
+      const res = await axios.get(`${baseUrl}/all`);
       const data = res.data || [];
       setTasks(data);
-      setFilteredTasks(data); // initialize filtered list
+      setFilteredTasks(data);
     } catch (err) {
       console.error("Error loading tasks:", err);
     }
@@ -42,7 +44,6 @@ export default function TaskDashboard() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 🧠 Validation: end date must not be before start date
     if (form.startDate && form.endDate) {
       const start = new Date(form.startDate);
       const end = new Date(form.endDate);
@@ -54,15 +55,14 @@ export default function TaskDashboard() {
 
     try {
       if (editingTask) {
-        await TaskService.updateTask(editingTask.id, form);
+        await axios.put(`${baseUrl}/update/${editingTask.id}`, form);
         setEditingTask(null);
         setSuccess("✅ Task updated successfully!");
       } else {
-        await TaskService.createTask(form);
+        await axios.post(`${baseUrl}/add`, form);
         setSuccess("✅ Task added successfully!");
       }
 
-      // Reset form and reload data
       setForm({
         title: "",
         description: "",
@@ -86,7 +86,7 @@ export default function TaskDashboard() {
 
   const handleDelete = async (id) => {
     if (confirm("Are you sure you want to delete this task?")) {
-      await TaskService.deleteTask(id);
+      await axios.delete(`${baseUrl}/delete/${id}`);
       loadTasks();
       setSuccess("🗑️ Task deleted successfully!");
     }
@@ -105,7 +105,6 @@ export default function TaskDashboard() {
     setSuccess("");
   };
 
-  // 🔍 Handle Search Filter
   const handleSearchChange = (e) => {
     const query = e.target.value.toLowerCase();
     setSearch(query);
@@ -124,7 +123,6 @@ export default function TaskDashboard() {
     <div className="container">
       <h2>{editingTask ? "✏️ Edit Task" : "➕ Add Task"}</h2>
 
-      {/* === FORM === */}
       <form onSubmit={handleSubmit} className="form-container">
         <div className="form-group">
           <label htmlFor="title">Title:</label>
@@ -207,11 +205,9 @@ export default function TaskDashboard() {
         </div>
       </form>
 
-      {/* 🔴/🟢 Feedback Messages */}
       {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
       {success && <p style={{ color: "green", textAlign: "center" }}>{success}</p>}
 
-      {/* === SEARCH BAR === */}
       <div className="search-bar">
         <input
           type="text"
@@ -222,7 +218,6 @@ export default function TaskDashboard() {
         <button onClick={() => setSearch("")}>Clear</button>
       </div>
 
-      {/* === TABLE === */}
       <h2 style={{ marginTop: "30px" }}>📋 All Tasks</h2>
       <table>
         <thead>
